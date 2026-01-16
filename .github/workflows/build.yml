@@ -21,8 +21,7 @@ jobs:
         flutter-version: '3.19.0'
     
     - name: Regenerate Android files
-      run: |
-        flutter create --platforms=android .
+      run: flutter create --platforms=android --project-name alphawp_orders .
         
     - run: flutter pub get
     
