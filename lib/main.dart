@@ -42,7 +42,7 @@ class AlphaWPOrdersApp extends StatelessWidget {
       child: Consumer<AppProvider>(
         builder: (context, appProvider, _) {
           return MaterialApp(
-            title: 'AlphaWP Orders',
+            title: 'AlphaWP Orders Alerts',
             debugShowCheckedModeBanner: false,
             themeMode: appProvider.themeMode,
             theme: _lightTheme(),

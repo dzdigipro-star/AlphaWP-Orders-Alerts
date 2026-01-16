@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 // Title
                 Text(
-                  'AlphaWP Orders',
+                  'AlphaWP Orders Alerts',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,

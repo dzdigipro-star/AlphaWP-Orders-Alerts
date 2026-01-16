@@ -136,7 +136,7 @@ class SettingsScreen extends StatelessWidget {
           // App Info
           Center(
             child: Text(
-              'AlphaWP Orders v1.0.0',
+              'AlphaWP Orders Alerts v1.0.0',
               style: TextStyle(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontSize: 12,
