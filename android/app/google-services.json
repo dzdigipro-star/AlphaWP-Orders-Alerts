@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "265348486699",
+    "project_id": "alphawp-orders-alerts",
+    "storage_bucket": "alphawp-orders-alerts.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:265348486699:android:02203ef42e3cedb81d3c6e",
+        "android_client_info": {
+          "package_name": "com.alphawp.orders.alerts"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJ7ZaLDaiv2wHvKFYqvq7sneSuy5Fs9ho"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
