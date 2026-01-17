@@ -39,6 +39,8 @@ void main() async {
   } catch (e) {
     print('Firebase initialization failed: $e');
     print('Push notifications will not work. Configure Firebase to enable them.');
+    // Set the error in NotificationService so it shows in Settings
+    NotificationService.instance.setError('Firebase: ${e.toString()}');
   }
   
   runApp(const AlphaWPOrdersApp());

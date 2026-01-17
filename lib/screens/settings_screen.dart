@@ -27,7 +27,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _notificationsChecked = true;
       if (service.hasError) {
-        _notificationStatus = 'Not available';
+        // Show the actual error message to help debug
+        _notificationStatus = service.errorMessage ?? 'Error';
         _notificationsEnabled = false;
       } else if (service.isInitialized && service.token != null) {
         _notificationStatus = 'Enabled';
@@ -41,6 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -26,6 +26,13 @@ class NotificationService {
   bool get hasError => _initError != null;
   String? get errorMessage => _initError;
 
+  // Method to set error from external code (e.g., when Firebase.initializeApp fails)
+  void setError(String error) {
+    _initError = error;
+    _isInitialized = true; // Mark as initialized so UI updates
+  }
+
+
   Future<void> initialize() async {
     try {
       _messaging = FirebaseMessaging.instance;
