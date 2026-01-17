@@ -4,8 +4,43 @@ import '../providers/app_provider.dart';
 import '../services/notification_service.dart';
 import '../models/site.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _notificationsChecked = false;
+  String _notificationStatus = 'Checking...';
+  bool _notificationsEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkNotificationStatus();
+  }
+
+  void _checkNotificationStatus() {
+    final service = NotificationService.instance;
+    setState(() {
+      _notificationsChecked = true;
+      if (service.hasError) {
+        _notificationStatus = 'Not available';
+        _notificationsEnabled = false;
+      } else if (service.isInitialized && service.token != null) {
+        _notificationStatus = 'Enabled';
+        _notificationsEnabled = true;
+      } else if (service.isInitialized) {
+        _notificationStatus = 'Permission denied';
+        _notificationsEnabled = false;
+      } else {
+        _notificationStatus = 'Not configured';
+        _notificationsEnabled = false;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,26 +134,14 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
             title: const Text('Push Notifications'),
-            subtitle: Text(
-              NotificationService.instance.hasError
-                  ? 'Not available'
-                  : NotificationService.instance.isInitialized && NotificationService.instance.token != null 
-                      ? 'Enabled' 
-                      : NotificationService.instance.isInitialized
-                          ? 'Permission denied'
-                          : 'Initializing...',
-            ),
+            subtitle: Text(_notificationStatus),
             trailing: Icon(
-              NotificationService.instance.isInitialized && NotificationService.instance.token != null 
+              _notificationsEnabled 
                   ? Icons.check_circle 
-                  : NotificationService.instance.hasError
-                      ? Icons.error
-                      : Icons.error_outline,
-              color: NotificationService.instance.isInitialized && NotificationService.instance.token != null 
+                  : Icons.error_outline,
+              color: _notificationsEnabled 
                   ? Colors.green 
-                  : NotificationService.instance.hasError
-                      ? Colors.red
-                      : Colors.orange,
+                  : Colors.orange,
             ),
           ),
 
@@ -222,7 +245,8 @@ class SettingsScreen extends StatelessWidget {
 
   void _addNewSite(BuildContext context, AppProvider provider) {
     // Navigate back to login which will add a new site
-    provider.logout();
+    Navigator.pop(context); // Close settings screen first
+    provider.logout(); // This will trigger re-render to show LoginScreen
   }
 
   void _confirmLogout(BuildContext context, AppProvider provider) {
