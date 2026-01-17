@@ -13,21 +13,33 @@ import 'providers/app_provider.dart';
 // Background message handler
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print('Firebase init in background failed: $e');
+  }
   print('Background message: ${message.messageId}');
 }
+
+bool _firebaseInitialized = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  await Firebase.initializeApp();
-  
-  // Set up background message handler
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  
-  // Initialize notification service
-  await NotificationService.instance.initialize();
+  // Try to initialize Firebase (may fail if not configured)
+  try {
+    await Firebase.initializeApp();
+    _firebaseInitialized = true;
+    
+    // Set up background message handler only if Firebase works
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    // Initialize notification service
+    await NotificationService.instance.initialize();
+  } catch (e) {
+    print('Firebase initialization failed: $e');
+    print('Push notifications will not work. Configure Firebase to enable them.');
+  }
   
   runApp(const AlphaWPOrdersApp());
 }
