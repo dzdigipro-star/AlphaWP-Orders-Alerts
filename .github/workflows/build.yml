@@ -43,11 +43,10 @@ jobs:
 
     - name: Add Firebase to Android
       run: |
-        # Add google-services plugin to android/settings.gradle
-        sed -i 's/}$/    id "com.google.gms.google-services" version "4.4.0" apply false\n}/' android/settings.gradle
+        # Add google-services plugin to settings.gradle plugins block
+        sed -i '/^plugins {/a\    id "com.google.gms.google-services" version "4.4.0" apply false' android/settings.gradle
         
-        # Add apply plugin to android/app/build.gradle
-        echo "" >> android/app/build.gradle
+        # Add apply plugin to app/build.gradle
         echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
         
     - run: flutter pub get
