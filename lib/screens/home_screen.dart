@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../providers/app_provider.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../models/order.dart';
 import '../models/lead.dart';
 import 'settings_screen.dart';
@@ -47,7 +49,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   final RefreshController _refreshController = RefreshController();
   
@@ -55,22 +57,83 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<Order> _orders = [];
   List<Lead> _leads = [];
   bool _isLoading = true;
+  Timer? _autoRefreshTimer;
+  bool _deviceRegistered = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
+    _setupNotifications();
+    _startAutoRefresh();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _refreshController.dispose();
+    _autoRefreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh data when app comes to foreground
+    if (state == AppLifecycleState.resumed) {
+      _loadData();
+    }
+  }
+
+  void _setupNotifications() {
+    final notificationService = NotificationService.instance;
+    
+    // Register device when token is received
+    notificationService.onTokenReceived = (token) {
+      _registerDevice(token);
+    };
+    
+    // Refresh data when notification is received
+    notificationService.onNotificationReceived = () {
+      _loadData();
+    };
+    
+    // If token already exists, register now
+    if (notificationService.token != null && !_deviceRegistered) {
+      _registerDevice(notificationService.token!);
+    }
+  }
+
+  Future<void> _registerDevice(String token) async {
+    if (_deviceRegistered) return;
+    
+    final site = context.read<AppProvider>().currentSite;
+    if (site == null) return;
+
+    final api = ApiService(site);
+    final success = await api.registerDevice(token, 'AlphaWP Orders App');
+    
+    if (success) {
+      _deviceRegistered = true;
+      print('Device registered successfully with server');
+    } else {
+      print('Failed to register device with server');
+    }
+  }
+
+  void _startAutoRefresh() {
+    // Auto-refresh every 30 seconds
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+  }
+
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     
     final site = context.read<AppProvider>().currentSite;
@@ -84,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       api.getLeads(),
     ]);
 
+    if (!mounted) return;
     setState(() {
       _stats = results[0] as Map<String, dynamic>?;
       _orders = results[1] as List<Order>;

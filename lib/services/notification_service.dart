@@ -13,6 +13,11 @@ class NotificationService {
   String? _token;
   bool _isInitialized = false;
   String? _initError;
+  
+  // Callback for when token is obtained or refreshed
+  Function(String token)? onTokenReceived;
+  // Callback for when a notification is received (for refreshing data)
+  Function()? onNotificationReceived;
 
   NotificationService._();
 
@@ -40,11 +45,23 @@ class NotificationService {
         _token = await _messaging!.getToken();
         print('FCM Token: $_token');
         
+        // Notify callback if set
+        if (_token != null && onTokenReceived != null) {
+          onTokenReceived!(_token!);
+        }
+        
         // Listen for token refresh
         _messaging!.onTokenRefresh.listen((token) {
           _token = token;
           print('FCM Token refreshed: $token');
+          // Notify callback on refresh
+          if (onTokenReceived != null) {
+            onTokenReceived!(token);
+          }
         });
+      } else {
+        print('Notification permission denied');
+        _initError = 'Permission denied';
       }
 
       // Initialize local notifications
@@ -92,6 +109,7 @@ class NotificationService {
       _isInitialized = true;
     } catch (e) {
       _initError = e.toString();
+      _isInitialized = true; // Mark as initialized even on error so UI updates
       print('NotificationService initialization failed: $e');
       // Continue without push notifications
     }
@@ -115,6 +133,11 @@ class NotificationService {
 
     // Show local notification
     await _showLocalNotification(message);
+    
+    // Notify app to refresh data
+    if (onNotificationReceived != null) {
+      onNotificationReceived!();
+    }
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {
