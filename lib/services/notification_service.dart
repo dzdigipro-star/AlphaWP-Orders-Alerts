@@ -6,79 +6,94 @@ import 'package:audioplayers/audioplayers.dart';
 class NotificationService {
   static final NotificationService instance = NotificationService._();
   
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   final AudioPlayer _audioPlayer = AudioPlayer();
   
+  FirebaseMessaging? _messaging;
   String? _token;
+  bool _isInitialized = false;
+  String? _initError;
 
   NotificationService._();
 
   String? get token => _token;
+  bool get isInitialized => _isInitialized;
+  bool get hasError => _initError != null;
+  String? get errorMessage => _initError;
 
   Future<void> initialize() async {
-    // Request permission
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted notification permission');
+    try {
+      _messaging = FirebaseMessaging.instance;
       
-      // Get FCM token
-      _token = await _messaging.getToken();
-      print('FCM Token: $_token');
+      // Request permission
+      final settings = await _messaging!.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        print('User granted notification permission');
+        
+        // Get FCM token
+        _token = await _messaging!.getToken();
+        print('FCM Token: $_token');
+        
+        // Listen for token refresh
+        _messaging!.onTokenRefresh.listen((token) {
+          _token = token;
+          print('FCM Token refreshed: $token');
+        });
+      }
+
+      // Initialize local notifications
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
       
-      // Listen for token refresh
-      _messaging.onTokenRefresh.listen((token) {
-        _token = token;
-        print('FCM Token refreshed: $token');
-      });
-    }
+      await _localNotifications.initialize(
+        const InitializationSettings(
+          android: androidSettings,
+          iOS: iosSettings,
+        ),
+        onDidReceiveNotificationResponse: _onNotificationTap,
+      );
 
-    // Initialize local notifications
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    
-    await _localNotifications.initialize(
-      const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
-      onDidReceiveNotificationResponse: _onNotificationTap,
-    );
+      // Create Android notification channel for orders
+      const orderChannel = AndroidNotificationChannel(
+        'alphawp_orders',
+        'AlphaWP Orders',
+        description: 'Notifications for new orders and abandoned leads',
+        importance: Importance.high,
+        playSound: true,
+        enableVibration: true,
+      );
 
-    // Create Android notification channel for orders
-    const orderChannel = AndroidNotificationChannel(
-      'alphawp_orders',
-      'AlphaWP Orders',
-      description: 'Notifications for new orders and abandoned leads',
-      importance: Importance.high,
-      playSound: true,
-      enableVibration: true,
-    );
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(orderChannel);
 
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(orderChannel);
-
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    
-    // Handle message opened from background
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
-    
-    // Check if app was opened from a notification
-    final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleMessageOpenedApp(initialMessage);
+      // Handle foreground messages
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      
+      // Handle message opened from background
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+      
+      // Check if app was opened from a notification
+      final initialMessage = await _messaging!.getInitialMessage();
+      if (initialMessage != null) {
+        _handleMessageOpenedApp(initialMessage);
+      }
+      
+      _isInitialized = true;
+    } catch (e) {
+      _initError = e.toString();
+      print('NotificationService initialization failed: $e');
+      // Continue without push notifications
     }
   }
 

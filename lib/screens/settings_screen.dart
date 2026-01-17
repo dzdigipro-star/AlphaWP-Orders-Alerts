@@ -100,17 +100,25 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.notifications_outlined),
             title: const Text('Push Notifications'),
             subtitle: Text(
-              NotificationService.instance.token != null 
-                  ? 'Enabled' 
-                  : 'Not configured',
+              NotificationService.instance.hasError
+                  ? 'Not available'
+                  : NotificationService.instance.isInitialized && NotificationService.instance.token != null 
+                      ? 'Enabled' 
+                      : NotificationService.instance.isInitialized
+                          ? 'Permission denied'
+                          : 'Initializing...',
             ),
             trailing: Icon(
-              NotificationService.instance.token != null 
+              NotificationService.instance.isInitialized && NotificationService.instance.token != null 
                   ? Icons.check_circle 
-                  : Icons.error_outline,
-              color: NotificationService.instance.token != null 
+                  : NotificationService.instance.hasError
+                      ? Icons.error
+                      : Icons.error_outline,
+              color: NotificationService.instance.isInitialized && NotificationService.instance.token != null 
                   ? Colors.green 
-                  : Colors.orange,
+                  : NotificationService.instance.hasError
+                      ? Colors.red
+                      : Colors.orange,
             ),
           ),
 

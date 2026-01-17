@@ -8,6 +8,38 @@ import '../models/order.dart';
 import '../models/lead.dart';
 import 'settings_screen.dart';
 
+/// Decode HTML entities like &#x62f; to their actual characters
+String decodeHtmlEntities(String text) {
+  // Common HTML entity patterns
+  final hexPattern = RegExp(r'&#x([0-9a-fA-F]+);');
+  final decPattern = RegExp(r'&#(\d+);');
+  
+  String result = text;
+  
+  // Decode hex entities (&#x62f; -> د)
+  result = result.replaceAllMapped(hexPattern, (match) {
+    final code = int.tryParse(match.group(1)!, radix: 16);
+    return code != null ? String.fromCharCode(code) : match.group(0)!;
+  });
+  
+  // Decode decimal entities (&#1583; -> د)
+  result = result.replaceAllMapped(decPattern, (match) {
+    final code = int.tryParse(match.group(1)!);
+    return code != null ? String.fromCharCode(code) : match.group(0)!;
+  });
+  
+  // Common named entities
+  result = result
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&apos;', "'")
+      .replaceAll('&nbsp;', ' ');
+  
+  return result;
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -148,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: _StatCard(
                 icon: Icons.attach_money,
                 title: 'Revenue',
-                value: '${(today['revenue'] ?? 0).toStringAsFixed(0)} $currency',
+                value: '${(today['revenue'] ?? 0).toStringAsFixed(0)} ${decodeHtmlEntities(currency)}',
                 color: Colors.blue,
               ),
             ),
@@ -418,7 +450,7 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${order.total.toStringAsFixed(0)} $currency',
+                  '${order.total.toStringAsFixed(0)} ${decodeHtmlEntities(currency)}',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
