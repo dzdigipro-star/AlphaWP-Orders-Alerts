@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.alphawp.orders"
+    namespace "com.alphawp.orders.alerts"
     compileSdk 34
     ndkVersion flutter.ndkVersion
 
@@ -42,7 +42,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.alphawp.orders"
+        applicationId "com.alphawp.orders.alerts"
         minSdk 21
         targetSdk 34
         versionCode flutterVersionCode.toInteger()

@@ -1,4 +1,4 @@
-package com.alphawp.orders
+package com.alphawp.orders.alerts
 
 import io.flutter.embedding.android.FlutterActivity
 
