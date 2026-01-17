@@ -43,8 +43,18 @@ jobs:
 
     - name: Add Firebase to Android
       run: |
+        # Add google-services plugin to settings.gradle plugins block
         sed -i '/^plugins {/a\    id "com.google.gms.google-services" version "4.4.0" apply false' android/settings.gradle
-        echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
+        
+        # Add google-services plugin to app/build.gradle plugins block (after the flutter plugin line)
+        sed -i '/id "dev.flutter.flutter-gradle-plugin"/a\    id "com.google.gms.google-services"' android/app/build.gradle
+        
+        # Add Firebase BOM and messaging dependencies
+        echo "" >> android/app/build.gradle
+        echo "dependencies {" >> android/app/build.gradle
+        echo "    implementation platform('com.google.firebase:firebase-bom:32.7.0')" >> android/app/build.gradle
+        echo "    implementation 'com.google.firebase:firebase-messaging'" >> android/app/build.gradle
+        echo "}" >> android/app/build.gradle
         
     - run: flutter pub get
     
