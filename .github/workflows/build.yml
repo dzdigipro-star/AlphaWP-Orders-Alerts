@@ -1,2 +1,60 @@
-git config credential.helper store
-git push origin main
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+    
+    - name: Backup google-services.json
+      run: |
+        if [ -f android/app/google-services.json ]; then
+          cp android/app/google-services.json /tmp/google-services.json
+          echo "google-services.json backed up"
+        else
+          echo "WARNING: google-services.json not found!"
+        fi
+        
+    - name: Clean and regenerate Android
+      run: |
+        rm -rf android
+        flutter create --platforms=android --project-name alphawp_orders .
+        
+    - name: Restore google-services.json
+      run: |
+        if [ -f /tmp/google-services.json ]; then
+          cp /tmp/google-services.json android/app/google-services.json
+          echo "google-services.json restored"
+        fi
+
+    - name: Add Firebase to Android
+      run: |
+        # Add google-services plugin to android/settings.gradle
+        sed -i 's/}$/    id "com.google.gms.google-services" version "4.4.0" apply false\n}/' android/settings.gradle
+        
+        # Add apply plugin to android/app/build.gradle
+        echo "" >> android/app/build.gradle
+        echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
+        
+    - run: flutter pub get
+    
+    - run: flutter build apk --release
+    
+    - uses: actions/upload-artifact@v4
+      with:
+        name: alphawp-orders-release
+        path: build/app/outputs/flutter-apk/app-release.apk
