@@ -20,10 +20,31 @@ jobs:
       with:
         flutter-version: '3.19.0'
     
+    - name: Backup google-services.json
+      run: |
+        if [ -f android/app/google-services.json ]; then
+          cp android/app/google-services.json /tmp/google-services.json
+        fi
+        
     - name: Clean and regenerate Android
       run: |
         rm -rf android
         flutter create --platforms=android --project-name alphawp_orders .
+        
+    - name: Restore google-services.json
+      run: |
+        if [ -f /tmp/google-services.json ]; then
+          cp /tmp/google-services.json android/app/google-services.json
+        fi
+
+    - name: Add Firebase to Android
+      run: |
+        # Add google-services plugin to android/build.gradle
+        sed -i 's/}$/    id "com.google.gms.google-services" version "4.4.0" apply false\n}/' android/settings.gradle
+        
+        # Add apply plugin to android/app/build.gradle
+        echo "" >> android/app/build.gradle
+        echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
         
     - run: flutter pub get
     
