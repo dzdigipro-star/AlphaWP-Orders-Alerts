@@ -20,8 +20,10 @@ jobs:
       with:
         flutter-version: '3.19.0'
     
-    - name: Regenerate Android files
-      run: flutter create --platforms=android --project-name alphawp_orders .
+    - name: Clean and regenerate Android
+      run: |
+        rm -rf android
+        flutter create --platforms=android --project-name alphawp_orders .
         
     - run: flutter pub get
     
