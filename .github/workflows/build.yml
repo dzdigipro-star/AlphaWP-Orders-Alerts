@@ -32,7 +32,7 @@ jobs:
     - name: Clean and regenerate Android
       run: |
         rm -rf android
-        flutter create --platforms=android --project-name alphawp_orders .
+        flutter create --platforms=android --org com.alphawp.orders --project-name alerts .
         
     - name: Restore google-services.json
       run: |
@@ -43,10 +43,7 @@ jobs:
 
     - name: Add Firebase to Android
       run: |
-        # Add google-services plugin to settings.gradle plugins block
         sed -i '/^plugins {/a\    id "com.google.gms.google-services" version "4.4.0" apply false' android/settings.gradle
-        
-        # Add apply plugin to app/build.gradle
         echo 'apply plugin: "com.google.gms.google-services"' >> android/app/build.gradle
         
     - run: flutter pub get
