@@ -37,7 +37,44 @@ class NotificationService {
     try {
       _messaging = FirebaseMessaging.instance;
       
-      // Request permission
+      // Initialize local notifications FIRST (before Firebase permission request)
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      
+      await _localNotifications.initialize(
+        const InitializationSettings(
+          android: androidSettings,
+          iOS: iosSettings,
+        ),
+        onDidReceiveNotificationResponse: _onNotificationTap,
+      );
+
+      // Create Android notification channel for orders (required before notifications)
+      const orderChannel = AndroidNotificationChannel(
+        'alphawp_orders',
+        'AlphaWP Orders',
+        description: 'Notifications for new orders and abandoned leads',
+        importance: Importance.high,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      final androidPlugin = _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+          
+      if (androidPlugin != null) {
+        await androidPlugin.createNotificationChannel(orderChannel);
+        
+        // Request notification permission for Android 13+ (API 33+)
+        final granted = await androidPlugin.requestNotificationsPermission();
+        print('Android notification permission granted: $granted');
+      }
+
+      // Now request Firebase permission
       final settings = await _messaging!.requestPermission(
         alert: true,
         badge: true,
@@ -70,36 +107,6 @@ class NotificationService {
         print('Notification permission denied');
         _initError = 'Permission denied';
       }
-
-      // Initialize local notifications
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const iosSettings = DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      );
-      
-      await _localNotifications.initialize(
-        const InitializationSettings(
-          android: androidSettings,
-          iOS: iosSettings,
-        ),
-        onDidReceiveNotificationResponse: _onNotificationTap,
-      );
-
-      // Create Android notification channel for orders
-      const orderChannel = AndroidNotificationChannel(
-        'alphawp_orders',
-        'AlphaWP Orders',
-        description: 'Notifications for new orders and abandoned leads',
-        importance: Importance.high,
-        playSound: true,
-        enableVibration: true,
-      );
-
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(orderChannel);
 
       // Handle foreground messages
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);

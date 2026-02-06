@@ -164,8 +164,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _callPhone(String phone) async {
     final uri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    try {
+      // Use externalApplication mode for reliable phone app launching
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      // Show error snackbar if call fails
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not make call: $phone'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
